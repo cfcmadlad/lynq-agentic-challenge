@@ -1,6 +1,6 @@
 """
 llm api integration - level 1
-author: aditya
+author: aditya  
 project: lynq agentic challenge - round 2
 """
 
