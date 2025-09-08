@@ -1,8 +1,9 @@
 # level2/weather_mcp.py
 import os
-
+import sys
 # enforce python version early
-import python_version_check  # raises SystemExit if Python < 3.10
+if sys.version_info < (3, 10):
+    raise SystemExit("Python 3.10+ is required. Upgrade Python or change type hints.")
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP

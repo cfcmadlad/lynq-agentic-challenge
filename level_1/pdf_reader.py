@@ -3,7 +3,8 @@ import os
 import sys
 
 # enforce python version early
-import python_version_check  # raises SystemExit if Python < 3.10
+if sys.version_info < (3, 10):
+    raise SystemExit("Python 3.10+ is required. Upgrade Python or change type hints.")
 
 from pypdf import PdfReader
 from dotenv import load_dotenv
