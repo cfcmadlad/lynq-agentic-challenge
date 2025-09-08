@@ -1,6 +1,7 @@
 # level1/llm_call.py
 import os
 import sys
+import time
 
 # enforce python version early
 if sys.version_info < (3, 10):
@@ -26,7 +27,7 @@ def get_key() -> str:
 def choose_model() -> str:
     """
     Choose a Gemini model automatically if available.
-    Falls back to a safe default.
+    Falls back to gemini-1.5-flash to avoid quota issues.
     """
     genai.configure(api_key=get_key())
     try:
@@ -38,14 +39,15 @@ def choose_model() -> str:
             if name:
                 avail.append(name)
     except Exception:
-        # Listing may be disabled for some API keys; fallback to default.
+        # Listing may be disabled for some API keys; fallback to flash.
+        print("Could not list models, using gemini-1.5-flash")
         return "gemini-1.5-flash"
 
     # filter out a few known unwanted values
     avail = [a for a in avail if a not in {"gemini-pro", "models/gemini-pro"}]
 
-    # preferred ordering
-    for prefer in ("gemini-1.5-pro", "gemini-1.5-flash"):
+    # Prioritize flash over pro to avoid quota issues
+    for prefer in ("gemini-1.5-flash", "gemini-1.5-pro"):
         for a in avail:
             if prefer in a:
                 return a
@@ -66,11 +68,21 @@ def test_gemini(model_name: str) -> bool:
     try:
         m = genai.GenerativeModel(model_name)
         resp = m.generate_content(prompt)
-        text = (getattr(resp, "text", None) or "").strip()
-        print("test reply:", text)
-        return True
+        text = getattr(resp, "text", None)
+        if text and text.strip():
+            print("test reply:", text.strip())
+            return True
+        else:
+            print("test failed: no response text received")
+            return False
     except Exception as e:
-        print("test error:", e)
+        error_str = str(e)
+        if "429" in error_str or "quota" in error_str.lower():
+            print("Quota exceeded. Try again later or use gemini-1.5-flash.")
+        elif "404" in error_str or "not found" in error_str.lower():
+            print("Model not found. Check if the model name is valid.")
+        else:
+            print("test error:", e)
         return False
 
 
@@ -92,8 +104,16 @@ def chat_with_gemini(model_name: str):
         try:
             r = model.generate_content(user_input)
             print("gemini:", (getattr(r, "text", "") or "").strip(), "\n")
+            # Add small delay to avoid hitting rate limits
+            time.sleep(1)
         except Exception as e:
-            print("error:", e, "\n")
+            if "429" in str(e) or "quota" in str(e).lower():
+                print("Hit quota limit. Waiting 60 seconds before you can try again...")
+                print("Consider switching to gemini-1.5-flash model if using pro.")
+                time.sleep(2)
+            else:
+                print("error:", e, "\n")
+                time.sleep(1)
 
 
 if __name__ == "__main__":
