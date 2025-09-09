@@ -62,7 +62,7 @@ def choose_model() -> str:
 def test_gemini(model_name: str) -> bool:
     """Basic smoke test for the model; returns True on success."""
     prompt = (
-        "Provide a concise two-sentence summary of Chelsea FC that includes the founding year "
+        "Provide a concise six-sentence summary of Chelsea FC that includes the founding year "
         "and the home stadium. Respond in plain text."
     )
     try:
