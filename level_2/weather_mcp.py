@@ -1,12 +1,16 @@
-"""MCP Tool Server for weather data using FastMCP (HTTP mode via uvicorn)."""
+# level_2/weather_mcp.py
+"""Minimal HTTP wrapper for the weather tool.
+Provides:
+  GET  /tools/list
+  POST /tools/call
+This calls the local `get_weather` function (so no dependency on FastMCP internals).
+"""
 import os
 from dotenv import load_dotenv
-from fastmcp import FastMCP
 import httpx
 
 load_dotenv()
 
-mcp = FastMCP("weather-service")
 API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
 
 # Mock weather data
@@ -24,7 +28,6 @@ MOCK_DATA = {
 }
 
 
-@mcp.tool
 def get_weather(city: str) -> str:
     """Get current weather for a city. Returns a short human-friendly string."""
     if not city:
@@ -57,6 +60,54 @@ def get_weather(city: str) -> str:
         return f"Weather in {city}: {weather} (API unavailable)"
 
 
+# ---------- HTTP server (FastAPI) ----------
+# This provides the endpoints your client expects:
+#  GET  /tools/list  -> {"tools": ["get_weather"]}
+#  POST /tools/call  -> {"content": [{"type": "text", "text": "<result>"}]}
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel
+from typing import Any, Dict
+
+app = FastAPI(title="Weather MCP HTTP wrapper")
+
+TOOL_NAMES = ["get_weather"]
+
+
+@app.get("/tools/list")
+async def tools_list():
+    return {"tools": TOOL_NAMES}
+
+
+class CallBody(BaseModel):
+    name: str
+    arguments: Dict[str, Any] = {}
+
+
+@app.post("/tools/call")
+async def tools_call(body: CallBody):
+    if body.name != "get_weather":
+        raise HTTPException(status_code=400, detail="Unknown tool")
+
+    # Expecting arguments: {"city": "<city name>"}
+    city = None
+    if isinstance(body.arguments, dict):
+        city = body.arguments.get("city") or body.arguments.get("City") or body.arguments.get("location")
+
+    if not city:
+        # Accept query-like call as fallback
+        raise HTTPException(status_code=400, detail="Missing 'city' argument")
+
+    # Call the local get_weather function synchronously (fast)
+    result_text = get_weather(str(city))
+
+    # Return shape compatible with multiple FastMCP client expectations:
+    # Provide both 'result' and 'content' list with a text item.
+    return {
+        "result": result_text,
+        "content": [{"type": "text", "text": result_text}],
+    }
+
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
     host = os.getenv("HOST", "0.0.0.0")
@@ -69,8 +120,8 @@ if __name__ == "__main__":
     print("  GET  /tools/list")
     print("\nPress Ctrl+C to stop\n")
 
-    # Serve the underlying FastAPI ASGI app that FastMCP exposes using uvicorn.
-    # This gives you an HTTP server on the port your client expects.
     import uvicorn
 
-    uvicorn.run(mcp.app, host=host, port=port)
+    # Use the app object directly so we don't need to import by module path
+    uvicorn.run(app, host=host, port=port)
+
