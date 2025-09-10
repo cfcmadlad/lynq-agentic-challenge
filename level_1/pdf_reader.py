@@ -1,6 +1,5 @@
 """
 PDF Reader Module - Level 1
-Author: Professional PDF Processing System
 Handles PDF text extraction and AI-powered document analysis.
 """
 
@@ -12,7 +11,7 @@ try:
     from pypdf import PdfReader
     import google.generativeai as genai
 except ImportError as e:
-    raise ImportError(f"Missing package: {e}. Run: pip install pypdf google-generativeai")
+    raise ImportError(f"Missing package: {e}. Run: pip install pypdf google-generativeai python-dotenv")
 
 
 class PDFProcessor:
@@ -56,6 +55,8 @@ class PDFProcessor:
                         cleaned = ' '.join(page_text.strip().split())
                         if len(cleaned) > 10:  # Minimum meaningful content
                             text_parts.append(cleaned)
+                        else:
+                            failed_pages += 1
                     else:
                         failed_pages += 1
                         
@@ -168,6 +169,9 @@ class GeminiClient:
         if self.api_key:
             try:
                 genai.configure(api_key=self.api_key)
+                # Test the API key with a simple call
+                test_model = genai.GenerativeModel("gemini-1.5-flash")
+                # Don't actually call it, just create the model to test configuration
             except Exception:
                 self.api_key = None  # Invalid key
     
@@ -177,7 +181,7 @@ class GeminiClient:
         
         for key_name in possible_keys:
             value = os.getenv(key_name)
-            if value and value.strip() and not value.startswith("your_"):
+            if value and value.strip() and not value.startswith("your_") and len(value.strip()) > 10:
                 return value.strip()
         return None
     
@@ -231,7 +235,7 @@ ANALYSIS:"""
             # Handle specific API errors
             if any(term in error_message for term in ["429", "quota", "rate limit"]):
                 return "API quota exceeded. Please wait or try the Flash model for better limits."
-            elif any(term in error_message for term in ["api", "key", "auth"]):
+            elif any(term in error_message for term in ["api", "key", "auth", "invalid"]):
                 return "API authentication failed. Please verify your GEMINI_API_KEY."
             elif any(term in error_message for term in ["blocked", "safety"]):
                 return "Response blocked by safety filters. Try rephrasing your question."
@@ -250,7 +254,7 @@ ANALYSIS:"""
         if len(context) > 300:
             preview += "..."
         
-        return f"""🔧 DEMO MODE - API Key Required for AI Analysis
+        return f"""DEMO MODE - API Key Required for AI Analysis
 
 Your Question: {question}
 

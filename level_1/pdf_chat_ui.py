@@ -46,7 +46,7 @@ def initialize_session_state():
 
 def display_application_header():
     """Render application header with API status."""
-    st.title("📄 PDF Document Analyzer")
+    st.title("PDF Document Analyzer")
     st.markdown("**Professional document analysis with AI-powered insights**")
     
     # Check API availability
@@ -55,9 +55,9 @@ def display_application_header():
     col1, col2 = st.columns([3, 1])
     with col1:
         if gemini_client.is_available():
-            st.success("🟢 AI Analysis Active - Gemini API Connected")
+            st.success("AI Analysis Active - Gemini API Connected")
         else:
-            st.warning("🟡 Demo Mode Active - Add API key for full AI analysis")
+            st.warning("Demo Mode Active - Add API key for full AI analysis")
     
     with col2:
         if not gemini_client.is_available():
@@ -67,7 +67,7 @@ def display_application_header():
 
 def show_api_setup_guide():
     """Display API configuration instructions."""
-    with st.expander("🔧 API Configuration Guide", expanded=True):
+    with st.expander("API Configuration Guide", expanded=True):
         st.markdown("""
         **Quick Setup Steps:**
         
@@ -88,7 +88,7 @@ def show_api_setup_guide():
 
 def handle_document_upload():
     """Process PDF document upload with comprehensive error handling."""
-    st.subheader("📁 Document Upload")
+    st.subheader("Document Upload")
     
     uploaded_file = st.file_uploader(
         "Choose PDF Document",
@@ -108,7 +108,7 @@ def handle_document_upload():
 
 def process_new_document(uploaded_file):
     """Process newly uploaded PDF document."""
-    with st.spinner(f"🔄 Processing {uploaded_file.name}..."):
+    with st.spinner(f"Processing {uploaded_file.name}..."):
         try:
             # Initialize processor
             processor = PDFProcessor()
@@ -116,7 +116,7 @@ def process_new_document(uploaded_file):
             # Read and process file
             file_bytes = uploaded_file.read()
             if not file_bytes:
-                st.error("❌ Empty file uploaded")
+                st.error("Empty file uploaded")
                 return
             
             # Extract text
@@ -134,7 +134,7 @@ def process_new_document(uploaded_file):
                 st.session_state.analysis_history = []  # Clear history
                 
                 # Success feedback
-                st.success(f"✅ Successfully processed: {uploaded_file.name}")
+                st.success(f"Successfully processed: {uploaded_file.name}")
                 
                 # Statistics
                 stats_col1, stats_col2, stats_col3 = st.columns(3)
@@ -146,24 +146,24 @@ def process_new_document(uploaded_file):
                     st.metric("Pages Processed", len(content.split('\n\n')))
                 
             else:
-                st.error("❌ No readable text found in PDF")
-                st.info("💡 Tip: Ensure PDF contains selectable text, not scanned images")
+                st.error("No readable text found in PDF")
+                st.info("Tip: Ensure PDF contains selectable text, not scanned images")
             
             # Display any processing warnings
             if warnings:
-                with st.expander("⚠️ Processing Warnings", expanded=False):
+                with st.expander("Processing Warnings", expanded=False):
                     for warning in warnings:
                         st.warning(warning)
                         
         except Exception as e:
-            st.error(f"❌ Processing failed: {str(e)}")
+            st.error(f"Processing failed: {str(e)}")
             reset_document_state()
 
 
 def display_document_status():
     """Show current document information and controls."""
     if not st.session_state.pdf_filename:
-        st.info("📤 Upload a PDF document to begin analysis")
+        st.info("Upload a PDF document to begin analysis")
         return
     
     st.markdown("---")
@@ -172,17 +172,17 @@ def display_document_status():
     info_col1, info_col2 = st.columns([2, 1])
     
     with info_col1:
-        st.markdown("**📋 Current Document**")
+        st.markdown("**Current Document**")
         st.text(f"File: {st.session_state.pdf_filename}")
         if st.session_state.pdf_content:
             st.text(f"Size: {len(st.session_state.pdf_content):,} characters")
             st.text(f"Analysis ready: {len(st.session_state.pdf_chunks)} segments")
     
     with info_col2:
-        if st.button("🔍 Preview Content", use_container_width=True):
+        if st.button("Preview Content", use_container_width=True):
             show_content_preview()
         
-        if st.button("🗑️ Clear Document", use_container_width=True):
+        if st.button("Clear Document", use_container_width=True):
             reset_document_state()
             st.success("Document cleared successfully")
             st.rerun()
@@ -193,7 +193,7 @@ def show_content_preview():
     if not st.session_state.pdf_content:
         return
         
-    with st.expander("📖 Document Content Preview", expanded=True):
+    with st.expander("Document Content Preview", expanded=True):
         preview_text = st.session_state.pdf_content[:2000]
         st.text_area(
             "First 2000 characters:",
@@ -218,30 +218,30 @@ def reset_document_state():
 
 def handle_document_analysis():
     """Main document analysis interface."""
-    st.subheader("🤖 AI Document Analysis")
+    st.subheader("AI Document Analysis")
     
     if not st.session_state.pdf_content:
-        st.info("📋 Please upload a document to enable analysis")
+        st.info("Please upload a document to enable analysis")
         return
     
     # Analysis configuration
-    setup_analysis_options()
+    selected_model, force_demo = setup_analysis_options()
     
     # Question input
     question = st.text_area(
-        "💬 Ask a question about your document:",
+        "Ask a question about your document:",
         placeholder="Examples:\n• What is the main topic of this document?\n• Who are the key people mentioned?\n• What are the main conclusions?\n• Provide a summary of key findings\n• What recommendations are made?",
         height=120,
         key="question_input"
     )
     
     # Analysis execution
-    if st.button("🚀 Analyze Document", type="primary", use_container_width=True):
+    if st.button("Analyze Document", type="primary", use_container_width=True):
         if not question.strip():
-            st.error("❌ Please enter a question to analyze")
+            st.error("Please enter a question to analyze")
             return
         
-        execute_analysis(question.strip())
+        execute_analysis(question.strip(), selected_model, force_demo)
 
 
 def setup_analysis_options():
@@ -256,13 +256,11 @@ def setup_analysis_options():
         ]
         
         selected_model = st.selectbox(
-            "🔧 AI Model:",
+            "AI Model:",
             options=model_options,
             index=0,
             help="Flash model recommended for better performance and quota limits"
         )
-        
-        return selected_model
     
     with config_col2:
         gemini_client = GeminiClient()
@@ -272,21 +270,18 @@ def setup_analysis_options():
             disabled=not gemini_client.is_available(),
             help="Use demo responses instead of AI analysis"
         )
-        
-        return force_demo
-
-
-def execute_analysis(question: str):
-    """Execute document analysis with the given question."""
-    # Get configuration
-    selected_model = setup_analysis_options()
     
+    return selected_model, force_demo
+
+
+def execute_analysis(question: str, selected_model: str, force_demo: bool):
+    """Execute document analysis with the given question."""
     # Initialize components
     processor = PDFProcessor()
     gemini_client = GeminiClient()
     
     # Find relevant content
-    with st.spinner("🔍 Searching relevant document sections..."):
+    with st.spinner("Searching relevant document sections..."):
         relevant_context = processor.find_relevant_chunks(
             st.session_state.pdf_chunks, 
             question,
@@ -294,31 +289,29 @@ def execute_analysis(question: str):
         )
     
     if not relevant_context:
-        st.warning("⚠️ No relevant content found for your question")
+        st.warning("No relevant content found for your question")
         return
     
     # Generate AI response
-    force_demo = not gemini_client.is_available() or st.session_state.get('force_demo', False)
-    
     if gemini_client.is_available() and not force_demo:
-        with st.spinner("🤖 Generating AI analysis..."):
+        with st.spinner("Generating AI analysis..."):
             response = gemini_client.query(selected_model, relevant_context, question)
     else:
         response = gemini_client.generate_mock_response(relevant_context, question)
     
     # Display results
-    display_analysis_results(question, response, relevant_context, selected_model, force_demo)
+    display_analysis_results(question, response, relevant_context, selected_model, force_demo or not gemini_client.is_available())
 
 
 def display_analysis_results(question: str, response: str, context: str, model: str, is_demo: bool):
     """Display analysis results with formatting."""
-    st.markdown("### 📊 Analysis Results")
+    st.markdown("### Analysis Results")
     
     # Main response
     st.markdown(response)
     
     # Source context
-    with st.expander("📝 Source Context Used", expanded=False):
+    with st.expander("Source Context Used", expanded=False):
         st.text_area(
             "Relevant document sections analyzed:",
             value=context,
@@ -335,7 +328,6 @@ def display_analysis_results(question: str, response: str, context: str, model: 
     analysis_entry = {
         'question': question,
         'response': response,
-        'timestamp': st.session_state.get('current_time', 'Now'),
         'model': model,
         'demo_mode': is_demo
     }
@@ -353,26 +345,26 @@ def display_application_footer():
     footer_col1, footer_col2, footer_col3 = st.columns(3)
     
     with footer_col1:
-        st.markdown("**💡 Usage Tips:**")
+        st.markdown("**Usage Tips:**")
         st.markdown("• Works best with text-based PDFs")
         st.markdown("• Ask specific, focused questions")
         st.markdown("• Try different question phrasings")
         st.markdown("• Use Flash model for better limits")
     
     with footer_col2:
-        st.markdown("**🔧 Troubleshooting:**")
+        st.markdown("**Troubleshooting:**")
         st.markdown("• Check API key if responses seem generic")
         st.markdown("• Ensure PDF has selectable text")
         st.markdown("• Try demo mode to test functionality")
         st.markdown("• Refresh if experiencing issues")
     
     with footer_col3:
-        st.markdown("**🚀 Quick Actions:**")
-        if st.button("🔄 Refresh Application"):
+        st.markdown("**Quick Actions:**")
+        if st.button("Refresh Application"):
             st.rerun()
         
         if st.session_state.analysis_history:
-            if st.button("📜 View Analysis History"):
+            if st.button("View Analysis History"):
                 show_analysis_history()
 
 
@@ -382,7 +374,7 @@ def show_analysis_history():
         st.info("No analysis history available")
         return
     
-    with st.expander("📜 Analysis History", expanded=True):
+    with st.expander("Analysis History", expanded=True):
         for i, entry in enumerate(reversed(st.session_state.analysis_history), 1):
             st.markdown(f"**Q{i}:** {entry['question']}")
             st.markdown(f"**A{i}:** {entry['response'][:200]}...")
@@ -392,25 +384,30 @@ def show_analysis_history():
 
 def main():
     """Main application entry point."""
-    # Initialize application
-    initialize_session_state()
+    try:
+        # Initialize application
+        initialize_session_state()
+        
+        # Display header
+        display_application_header()
+        
+        # Main application layout
+        main_col1, main_col2 = st.columns([1, 2])
+        
+        # Left column: Document upload and management  
+        with main_col1:
+            handle_document_upload()
+        
+        # Right column: Analysis interface
+        with main_col2:
+            handle_document_analysis()
+        
+        # Footer with help and utilities
+        display_application_footer()
     
-    # Display header
-    display_application_header()
-    
-    # Main application layout
-    main_col1, main_col2 = st.columns([1, 2])
-    
-    # Left column: Document upload and management  
-    with main_col1:
-        handle_document_upload()
-    
-    # Right column: Analysis interface
-    with main_col2:
-        handle_document_analysis()
-    
-    # Footer with help and utilities
-    display_application_footer()
+    except Exception as e:
+        st.error(f"Application error: {e}")
+        st.info("Please refresh the page and try again.")
 
 
 if __name__ == "__main__":
