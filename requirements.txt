@@ -1,6 +1,8 @@
 # Basic dependencies
 requests>=2.31.0
 python-dotenv>=1.0.0
+uvicorn>=0.22.0
+
 
 # Level 1 - PDF reading
 pypdf>=3.0.0
