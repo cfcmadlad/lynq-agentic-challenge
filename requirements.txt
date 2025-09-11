@@ -1,26 +1,25 @@
-# Basic dependencies
-requests>=2.31.0
+# Core dependencies
 python-dotenv>=1.0.0
+
+# HTTP client and server
+httpx>=0.25.0
+requests>=2.31.0
 uvicorn>=0.22.0
 
-
-# Level 1 - PDF reading
-pypdf>=3.0.0
-
-# AI/LLM - Gemini
-google-generativeai>=0.8.0
-
-# Level 2 - MCP server (FastMCP 2.0)
-fastmcp>=2.0.0
-
-# HTTP client
-httpx>=0.25.0
+# Web framework for MCP server
+fastapi>=0.104.0
 
 # Data validation
 pydantic>=2.0.0
 
-# Type hints support
-typing-extensions>=4.8.0
+# Level 1 - PDF processing
+pypdf>=3.0.0
 
-# Optional - for UI (Level 1)
+# Level 1 - Streamlit UI
 streamlit>=1.28.0
+
+# AI/LLM - Google Gemini
+google-generativeai>=0.8.0
+
+# Type hints support for older Python versions
+typing-extensions>=4.8.0
